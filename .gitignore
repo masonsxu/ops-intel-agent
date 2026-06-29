@@ -18,6 +18,10 @@ venv/
 *.db
 *.db-journal
 
+# local vector files
+*.vectors.json
+*.vectors.json.tmp
+
 # tooling
 .coverage
 .pytest_cache/
