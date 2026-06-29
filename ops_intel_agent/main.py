@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from .api import actions, alerts, health, knowledge
+from .api import actions, alerts, health, knowledge, stats
 from .config import get_settings
 from .db.session import dispose_engine, init_db
 from .logging import configure_logging, get_logger
@@ -68,6 +70,17 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router)
     app.include_router(knowledge.router)
     app.include_router(actions.router)
+    app.include_router(stats.router)
+
+    # If the built frontend SPA exists, serve it at "/" (single-origin deploy).
+    # Mounted last so API routes always take precedence; the SPA uses hash
+    # history, so client-side page routes never collide with API paths.
+    if settings.frontend_dir and os.path.isdir(settings.frontend_dir):
+        app.mount(
+            "/",
+            StaticFiles(directory=settings.frontend_dir, html=True),
+            name="frontend",
+        )
     return app
 
 

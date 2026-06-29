@@ -56,6 +56,12 @@ class KnowledgeRead(BaseModel):
         )
 
 
+class KnowledgeSearchHit(KnowledgeRead):
+    """A knowledge entry ranked by semantic similarity to a free-text query."""
+
+    similarity: float
+
+
 class KnowledgeDepositionRequest(BaseModel):
     """Engineer's free-form resolution notes for a new incident.
 

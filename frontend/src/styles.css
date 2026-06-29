@@ -1,0 +1,51 @@
+:root {
+  --oia-bg: #f5f7fa;
+  --oia-border: #e8eaed;
+}
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: var(--oia-bg);
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+  color: #1f2329;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+.pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'FiraCode', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.muted {
+  color: #8a8f99;
+}
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+.page-subtitle {
+  color: #8a8f99;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.section-card {
+  margin-bottom: 16px;
+}

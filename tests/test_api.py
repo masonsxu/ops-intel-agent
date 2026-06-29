@@ -74,3 +74,79 @@ async def test_create_knowledge_and_match(app):
         body = a.json()
         assert body["match_status"] == "matched"
         assert body["matched_knowledge_id"] == k.json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_alerts_filters_by_status_and_text(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        await ac.post("/alerts", json={"service": "auth", "raw_log": "redis timeout boom"})
+        await ac.post("/alerts", json={"service": "pay", "raw_log": "mysql pool exhausted"})
+
+        by_text = await ac.get("/alerts", params={"q": "mysql"})
+        assert by_text.status_code == 200
+        rows = by_text.json()
+        assert len(rows) == 1
+        assert "mysql" in rows[0]["raw_log"]
+
+        by_service = await ac.get("/alerts", params={"service": "auth"})
+        assert all(r["service"] == "auth" for r in by_service.json())
+
+        by_match = await ac.get("/alerts", params={"match_status": "new_incident"})
+        assert all(r["match_status"] == "new_incident" for r in by_match.json())
+
+
+@pytest.mark.asyncio
+async def test_knowledge_semantic_search_and_date_filter(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        await ac.post(
+            "/knowledge",
+            json={
+                "title": "redis oom",
+                "raw_log_sample": "redis OOM connection refused cache",
+                "user_guide": "缓存故障，请稍后重试",
+                "engineer_guide": "重启 redis 并扩容",
+                "tags": ["redis"],
+                "error_type": "Redis 连接超时",
+            },
+        )
+
+        # Vector fuzzy search: a phrased query still surfaces the redis entry.
+        hits = await ac.get("/knowledge/search", params={"q": "cache connection timeout", "k": 3})
+        assert hits.status_code == 200
+        payload = hits.json()
+        assert payload, "expected at least one semantic hit"
+        assert "similarity" in payload[0]
+        assert payload[0]["title"] == "redis oom"
+
+        # Empty query is rejected by validation.
+        bad = await ac.get("/knowledge/search", params={"q": ""})
+        assert bad.status_code == 422
+
+        # Date-scoped listing: today's date should include the entry.
+        from datetime import date
+
+        today = date.today().isoformat()
+        on_day = await ac.get("/knowledge", params={"date": today})
+        assert on_day.status_code == 200
+        assert any(k["title"] == "redis oom" for k in on_day.json())
+
+        # A clearly-empty date range returns nothing.
+        none = await ac.get(
+            "/knowledge", params={"date_from": "1999-01-01", "date_to": "1999-12-31"}
+        )
+        assert none.json() == []
+
+
+@pytest.mark.asyncio
+async def test_stats_endpoint(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        await ac.post("/alerts", json={"raw_log": "something broke xyz"})
+        s = await ac.get("/stats")
+        assert s.status_code == 200
+        body = s.json()
+        assert body["alerts"]["total"] >= 1
+        assert body["alerts"]["new_incident"] >= 1
+        assert "knowledge" in body and "vectors" in body["knowledge"]

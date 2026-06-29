@@ -50,6 +50,10 @@ def get_vector_store() -> VectorStore:
             from .pgvector import PgVectorStore
 
             _store = PgVectorStore(settings.pg_connection_string)
+        elif settings.vector_store == "chroma":
+            from .chroma import ChromaVectorStore
+
+            _store = ChromaVectorStore(path=settings.chroma_path)
         else:
             from .memory import MemoryVectorStore
 

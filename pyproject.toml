@@ -21,6 +21,9 @@ dependencies = [
     "sse-starlette>=2.1",
     "aiosqlite>=0.22.1",
     "greenlet>=3.5.3",
+    # Local embedded vector DB (default for dev/test). Fully offline, persists
+    # to disk via SQLite + Parquet under OIA_CHROMA_PATH. No external service.
+    "chromadb>=0.5.20",
 ]
 
 [project.optional-dependencies]

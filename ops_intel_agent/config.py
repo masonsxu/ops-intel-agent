@@ -31,7 +31,10 @@ class Settings(BaseSettings):
     # --- Backend selection -------------------------------------------------
     embedding_provider: Literal["openai", "local"] = "local"
     llm_provider: Literal["openai", "local"] = "local"
-    vector_store: Literal["pgvector", "memory"] = "memory"
+    # Chroma is the default local/test store: embedded, offline, disk-persisted.
+    # `memory` = the in-process numpy/JSON store (used by the test suite).
+    # `pgvector` = production PostgreSQL + pgvector.
+    vector_store: Literal["pgvector", "memory", "chroma"] = "chroma"
     notifier_provider: Literal["wechat", "dingtalk", "console"] = "console"
 
     # --- Embedding / LLM (OpenAI) -----------------------------------------
@@ -54,6 +57,8 @@ class Settings(BaseSettings):
     # Where the in-memory store persists its vectors so offline mode survives
     # process restarts (seed in one process, serve in another).
     memory_vector_path: str = "ops_intel_agent.vectors.json"
+    # Where the embedded Chroma store persists its data (SQLite + Parquet).
+    chroma_path: str = "./chroma_db"
 
     # --- Retrieval ---------------------------------------------------------
     similarity_top_k: int = 3
@@ -82,6 +87,9 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
+    # Directory of the built frontend SPA. If it exists at startup we mount it
+    # at "/" so FastAPI serves the UI alongside the API (single-origin deploy).
+    frontend_dir: str = "frontend/dist"
 
 
 @lru_cache(maxsize=1)

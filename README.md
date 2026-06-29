@@ -14,7 +14,8 @@
 - [它解决什么问题](#它解决什么问题)
 - [系统架构](#系统架构)
 - [核心设计决策：可插拔后端](#核心设计决策可插拔后端)
-- [快速开始（零依赖离线运行）](#快速开始零依赖离线运行)
+- [快速开始（默认即可离线运行）](#快速开始默认即可离线运行)
+- [Web 控制台（Vue 3 + Naive UI）](#web-控制台vue-3--naive-ui)
 - [知识闭环：系统如何“越用越聪明”](#知识闭环系统如何越用越聪明)
 - [API 参考](#api-参考)
 - [生产部署（OpenAI + pgvector + 企业微信）](#生产部署openai--pgvector--企业微信)
@@ -79,11 +80,11 @@
 
 每一个外部依赖都抽象成了接口，**同一份代码既能在笔记本上零依赖跑通**（用于评估/演示），**也能切到生产级后端**（只需改环境变量）。这是本项目最关键的架构选择：
 
-| 能力 | 接口 | 离线实现（默认） | 生产实现 |
+| 能力 | 接口 | 本地默认实现 | 生产实现 |
 | --- | --- | --- | --- |
 | 向量化 | `EmbeddingProvider` | `LocalEmbeddingProvider`（字符 n-gram 哈希，确定性，语义可分） | `OpenAIEmbeddingProvider`（text-embedding-3-small） |
 | 大模型 | `LLMProvider` | `LocalLLMProvider`（模板，遵循相同 Markdown 契约） | `OpenAILLMProvider`（gpt-4o-mini） |
-| 向量库 | `VectorStore` | `MemoryVectorStore`（numpy 余弦，**磁盘持久化**） | `PgVectorStore`（PostgreSQL + pgvector） |
+| 向量库 | `VectorStore` | **`ChromaVectorStore`**（嵌入式 ChromaDB，HNSW + 磁盘持久化） | `PgVectorStore`（PostgreSQL + pgvector） |
 | 通知 | `Notifier` | `ConsoleNotifier`（打印） | `WeChatNotifier` / `DingTalkNotifier` |
 | 动作 | `ActionRegistry` | 内置 5 个安全 no-op 动作 | 接 Ansible / kubectl / 内部 Runbook |
 

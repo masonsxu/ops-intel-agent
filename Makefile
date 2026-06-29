@@ -1,13 +1,14 @@
-.PHONY: help install dev run test lint format migrate seed demo clean
+.PHONY: help install dev run test lint format migrate seed demo clean frontend frontend-install frontend-dev frontend-build
 
 help:
 	@echo "Ops Intel Agent"
-	@echo "  make install   - install runtime deps (offline-capable)"
+	@echo "  make install   - install runtime deps (Chroma default, offline-capable)"
 	@echo "  make dev       - install runtime + dev deps"
 	@echo "  make prod      - install runtime + production backends (openai/pgvector)"
-	@echo "  make run       - run the API server (offline mode)"
-	@echo "  make seed      - seed demo knowledge base"
+	@echo "  make run       - run the API server (Chroma + local LLM/embedding)"
+	@echo "  make seed      - seed demo knowledge base (via API if running, else direct)"
 	@echo "  make demo      - seed + fire a sample alert"
+	@echo "  make frontend  - install + build the Vue UI (served by FastAPI at /)"
 	@echo "  make test      - run the test suite"
 	@echo "  make lint      - ruff + mypy"
 
@@ -30,6 +31,17 @@ demo:
 	uv run python scripts/seed_demo.py
 	uv run python scripts/fire_demo_alert.py
 
+frontend-install:
+	cd frontend && npm install
+
+frontend-dev:
+	cd frontend && npm run dev
+
+frontend-build:
+	cd frontend && npm run build
+
+frontend: frontend-install frontend-build
+
 test:
 	uv run pytest -q
 
@@ -44,4 +56,5 @@ format:
 
 clean:
 	rm -f *.db *.db-journal
+	rm -rf chroma_db
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

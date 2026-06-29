@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.pipeline import TriagePipeline
@@ -38,14 +38,36 @@ async def ingest_alert(
 
 @router.get("", response_model=list[AlertRead], summary="List recent alerts")
 async def list_alerts(
-    limit: int = 50,
-    status_filter: str | None = None,
+    limit: int = Query(50, ge=1, le=500),
+    status_filter: str | None = Query(None, alias="status", description="open | resolved"),
+    match_status: str | None = Query(
+        None, description="matched | new_incident | aggregated | deposited"
+    ),
+    service: str | None = Query(None, description="Exact service name"),
+    date: str | None = Query(None, description="Exact local date YYYY-MM-DD"),
+    date_from: str | None = Query(None, description="Inclusive lower bound YYYY-MM-DD"),
+    date_to: str | None = Query(None, description="Inclusive upper bound YYYY-MM-DD"),
+    q: str | None = Query(None, description="Substring search on raw log / error message"),
     session: AsyncSession = Depends(db_session),
 ) -> list[AlertRead]:
-    q = select(ErrorAlert).order_by(ErrorAlert.created_at.desc()).limit(limit)
+    stmt = select(ErrorAlert).order_by(ErrorAlert.created_at.desc()).limit(limit)
     if status_filter:
-        q = q.where(ErrorAlert.status == status_filter)
-    res = await session.execute(q)
+        stmt = stmt.where(ErrorAlert.status == status_filter)
+    if match_status:
+        stmt = stmt.where(ErrorAlert.match_status == match_status)
+    if service:
+        stmt = stmt.where(ErrorAlert.service == service)
+    if date:
+        # func.date() collapses the timestamp to its local calendar date.
+        stmt = stmt.where(func.date(ErrorAlert.created_at) == date)
+    if date_from:
+        stmt = stmt.where(func.date(ErrorAlert.created_at) >= date_from)
+    if date_to:
+        stmt = stmt.where(func.date(ErrorAlert.created_at) <= date_to)
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(or_(ErrorAlert.raw_log.ilike(like), ErrorAlert.error_message.ilike(like)))
+    res = await session.execute(stmt)
     return [AlertRead.model_validate(a) for a in res.scalars().all()]
 
 

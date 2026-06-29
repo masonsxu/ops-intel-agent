@@ -1,12 +1,17 @@
 """Seed the knowledge base with realistic demo incidents.
 
-Run after starting the API (or directly, which boots the DB) so the very first
-live alert has something to match against.
+Prefer running this **after** starting the API (`make run`): when the server is
+reachable the script seeds via `POST /knowledge`, which keeps every vector write
+inside the server process — important for the embedded Chroma store, which does
+not see direct cross-process writes to its files. If the server is not running,
+the script falls back to writing the DB/vector store directly (offline mode).
 """
 
 from __future__ import annotations
 
 import asyncio
+
+import httpx
 
 from ops_intel_agent.config import get_settings
 from ops_intel_agent.core.pipeline import KNOWLEDGE_NS
@@ -77,12 +82,30 @@ DEMO = [
 ]
 
 
-async def main() -> None:
+def _api_base() -> str:
+    settings = get_settings()
+    host = "127.0.0.1" if settings.api_host in ("0.0.0.0", "") else settings.api_host
+    return f"http://{host}:{settings.api_port}"
+
+
+async def _seed_via_api(base: str) -> int:
+    """Seed through the running API (keeps vector writes in-process)."""
+    seeded = 0
+    async with httpx.AsyncClient(base_url=base, timeout=10.0) as client:
+        for item in DEMO:
+            resp = await client.post("/knowledge", json={**item, "source": "seed:demo"})
+            resp.raise_for_status()
+            kb = resp.json()
+            print(f"  ✓ seeded (via API) #{kb['id']}: {kb['title']}")  # noqa: T201
+            seeded += 1
+    return seeded
+
+
+async def _seed_directly() -> int:
+    """Offline fallback: write the DB and vector store from this process."""
     await init_db()
     embeddings = get_embedding_service()
     store = get_vector_store()
-    settings = get_settings()
-    dim_ok = (settings.vector_store == "memory") or (settings.embedding_provider == "openai")
     async with SessionLocal() as session:
         for item in DEMO:
             kb = ErrorKnowledgeBase(
@@ -106,9 +129,30 @@ async def main() -> None:
             )
             print(f"  ✓ seeded #{kb.id}: {kb.title}")  # noqa: T201
         await session.commit()
-    n = await store.count(KNOWLEDGE_NS)
+    return await store.count(KNOWLEDGE_NS)
+
+
+async def main() -> None:
+    settings = get_settings()
+    base = _api_base()
+    # Detect a running server (short timeout). If up, seed through it so the
+    # embedded Chroma client in the server process owns every write.
+    server_up = False
+    try:
+        async with httpx.AsyncClient(base_url=base, timeout=1.5) as client:
+            server_up = (await client.get("/ready")).status_code == 200
+    except Exception:  # noqa: BLE001
+        server_up = False
+
+    if server_up:
+        print(f"Detected API at {base} — seeding via HTTP POST /knowledge …")  # noqa: T201
+        n = await _seed_via_api(base)
+    else:
+        print("API not reachable — seeding the DB/vector store directly …")  # noqa: T201
+        n = await _seed_directly()
+
     print(f"\nDone. {n} vectors in 'knowledge' namespace.")  # noqa: T201
-    if not dim_ok and settings.vector_store == "pgvector":
+    if settings.vector_store == "pgvector" and settings.embedding_provider != "openai":
         print("(note: pgvector dim must match provider dim — see OIA_EMBEDDING_DIM)")  # noqa: T201
 
 
