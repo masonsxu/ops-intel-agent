@@ -1,0 +1,8 @@
+{
+  "alert_id": 1,
+  "error_type": "Kafka 消费者积压",
+  "root_cause": "下游消费者实例全部 OOM 重启，导致 topic partition 积压超过 50 万条",
+  "resolution": "扩容消费者副本数 +2，并把 max.poll.records 从 500 降到 100，积压在 3 分钟内清空",
+  "engineer": "alice",
+  "tags": ["kafka", "consumer", "backlog"]
+}

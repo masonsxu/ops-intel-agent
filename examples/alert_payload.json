@@ -1,0 +1,8 @@
+{
+  "external_id": "alert-2026-06-29-0001",
+  "service": "auth",
+  "server_ip": "10.0.1.9",
+  "host": "app-09",
+  "severity": "critical",
+  "raw_log": "CRITICAL service=auth host=app-09 JedisConnectionException: Failed connecting to redis://10.0.1.2:6379 Connection refused (connection timed out after 5000ms)"
+}
