@@ -23,6 +23,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/KnowledgeView.vue'),
     meta: { title: '知识库' },
   },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { title: '设置' },
+  },
 ]
 
 // Hash history: the SPA is served by FastAPI at "/" in prod and must not

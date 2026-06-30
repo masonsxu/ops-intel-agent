@@ -37,3 +37,11 @@ frontend/*.tsbuildinfo
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+
+# OS / editor cruft
+.DS_Store
+*.log
+
+# Tauri / Nuitka desktop build outputs (the sidecar binary etc.)
+# — keep src-tauri/binaries/.../README.md placeholder (handled in src-tauri/.gitignore)
+src-tauri/target/

@@ -1,16 +1,18 @@
-.PHONY: help install dev run test lint format migrate seed demo clean frontend frontend-install frontend-dev frontend-build
+.PHONY: help install dev prod run seed demo clean frontend frontend-install frontend-dev frontend-build test lint format tauri-icons backend-binary tauri-dev tauri-build
 
 help:
 	@echo "Ops Intel Agent"
-	@echo "  make install   - install runtime deps (Chroma default, offline-capable)"
-	@echo "  make dev       - install runtime + dev deps"
-	@echo "  make prod      - install runtime + production backends (openai/pgvector)"
-	@echo "  make run       - run the API server (Chroma + local LLM/embedding)"
-	@echo "  make seed      - seed demo knowledge base (via API if running, else direct)"
-	@echo "  make demo      - seed + fire a sample alert"
-	@echo "  make frontend  - install + build the Vue UI (served by FastAPI at /)"
-	@echo "  make test      - run the test suite"
-	@echo "  make lint      - ruff + mypy"
+	@echo "  make install          - uv sync (runtime deps; chroma + local LLM, offline-capable)"
+	@echo "  make dev / prod       - add dev / prod extras"
+	@echo "  make run              - uvicorn API server on :8000"
+	@echo "  make frontend         - install + build the Vue UI (served by FastAPI at /)"
+	@echo "  make test / lint      - pytest / ruff+mypy"
+	@echo ""
+	@echo "  Desktop (Tauri):"
+	@echo "  make tauri-icons      - regenerate app icons from src-tauri/source-icon.png"
+	@echo "  make backend-binary   - compile backend sidecar with Nuitka (→ src-tauri/binaries/)"
+	@echo "  make tauri-dev        - run the desktop app (frontend + uv-launched backend)"
+	@echo "  make tauri-build      - build distributable desktop bundle (runs backend-binary first)"
 
 install:
 	uv sync
@@ -41,6 +43,20 @@ frontend-build:
 	cd frontend && npm run build
 
 frontend: frontend-install frontend-build
+
+# ── Tauri desktop app ─────────────────────────────────────────────────────────
+
+tauri-icons:
+	cargo tauri icon src-tauri/source-icon.png
+
+backend-binary:
+	uv run --with nuitka scripts/build_backend.py
+
+tauri-dev:
+	cargo tauri dev
+
+tauri-build: backend-binary
+	cargo tauri build --release
 
 test:
 	uv run pytest -q

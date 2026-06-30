@@ -8,10 +8,10 @@ import type {
   Stats,
 } from '@/types'
 
-// Relative baseURL: in dev Vite proxies API paths to :8000, in prod the SPA is
-// served by FastAPI on the same origin. Either way, relative URLs just work.
+const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
+
 const http = axios.create({
-  baseURL: '',
+  baseURL: BACKEND_URL,
   timeout: 15000,
 })
 

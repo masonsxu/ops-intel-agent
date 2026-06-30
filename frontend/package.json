@@ -11,6 +11,7 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2",
     "axios": "^1.7.9",
     "naive-ui": "^2.40.4",
     "vue": "^3.5.13",

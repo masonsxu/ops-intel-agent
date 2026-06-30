@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 // Dev: the SPA runs on Vite (5174) and proxies API calls to the FastAPI
 // backend on :8000. Prod: the built bundle is served by FastAPI itself at "/",
 // so all requests are same-origin and no proxy is needed.
-const API_TARGET = process.env.OIA_API_URL || 'http://localhost:8000'
+const API_TARGET = process.env.OIA_API_URL || 'http://127.0.0.1:8000'
 const apiPaths = [
   '/alerts',
   '/knowledge',

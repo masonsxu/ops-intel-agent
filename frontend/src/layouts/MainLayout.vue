@@ -73,12 +73,15 @@ const menuOptions: MenuOption[] = [
   { label: '概览', key: 'dashboard', icon: () => h(NIcon, null, () => '📊') },
   { label: '告警消息', key: 'alerts', icon: () => h(NIcon, null, () => '🚨') },
   { label: '知识库', key: 'knowledge', icon: () => h(NIcon, null, () => '📚') },
+  { type: 'divider' },
+  { label: '设置', key: 'settings', icon: () => h(NIcon, null, () => '⚙️') },
 ]
 
 const meta: Record<string, { title: string; sub: string }> = {
   dashboard: { title: '概览', sub: '系统健康度与告警/知识库一览' },
   alerts: { title: '告警消息', sub: '查看异常告警及其智能诊断报告' },
   knowledge: { title: '知识库', sub: '按日期精确检索 / 向量语义模糊搜索' },
+  settings: { title: '设置', sub: 'API 密钥与后端配置' },
 }
 
 const currentTitle = computed(() => meta[route.name as string]?.title ?? '')
