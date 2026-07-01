@@ -47,6 +47,13 @@ jobs:
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
             patchelf libssl-dev libxdo-dev
 
+      # Nuitka 在 Windows 的 standalone/onefile 模式必须用 Dependency Walker
+      # 解析 DLL 依赖（runner 不自带）。choco 包安装 depends.exe 到 PATH。
+      - name: Install Dependency Walker (Windows, required by Nuitka standalone)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install dependencywalker -y --no-progress
+
       # ── 工具链 ───────────────────────────────────────────────────────────
       - uses: actions/setup-node@v4
         with:
@@ -109,4 +116,6 @@ jobs:
             src-tauri/target/release/bundle/**/*.deb
             src-tauri/target/release/bundle/**/*.AppImage
           generate_release_notes: true
-          fail_on_unmatched_files: true
+          # 每个平台只产自己的包（mac→dmg、win→msi/exe、linux→deb/AppImage），
+          # 跨平台 glob 在非目标平台上必然不匹配，故不能因不匹配而失败。
+          fail_on_unmatched_files: false

@@ -161,8 +161,8 @@ def main() -> None:
         "--nofollow-import-to=respx",
         ENTRY,
     ]
-    if platform.system() == "Linux":
-        cmd.append("--assume-yes-for-dynamic-glibc")
+    # NOTE: Nuitka 4.x removed ``--assume-yes-for-dynamic-glibc`` (it auto-handles
+    # the dynamic-glibc case now). Do not pass it — older recipes still mention it.
     if args.onefile:
         cmd.append("--onefile")
     if args.debug:
